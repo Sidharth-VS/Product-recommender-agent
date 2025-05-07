@@ -42,17 +42,17 @@ class ProductSearcher():
                     | self.llmWithTools
                     | OpenAIToolsAgentOutputParser()
                 )
+        self.agentExecutor = AgentExecutor(agent=self.agent, tools=self.tools, verbose=False)
         
     def searchProduct(self, category, useCase):
-        input = f"""Find 5 products that match the category and Use case by doing a web search
+        prompt = f"""Find 5 products that match the category and Use case by doing a web search
                     category:{category}
                     use case:{useCase}
                 Output Format:
                 No preamble
                 Return a valid JSON array of strings of names of products with no explanation or formatting. Example:
                 ["Product 1", "Product 2", "Product 3"]"""
-        agentExecutor = AgentExecutor(agent=self.agent, tools=self.tools, verbose=False)
-        response = agentExecutor.invoke({"input":input})["output"]
+        response = self.agentExecutor.invoke({"input":prompt})["output"]
 
         if isinstance(response, str):
             try:
@@ -66,7 +66,28 @@ class ProductSearcher():
 
         return productList  
 
-   
+    def getLinks(self, product):
+        prompt = f"""
+                Search for {product} and give the first url that comes out.
+                Output Format:
+                Do not give preamble
+                Return a string of URL of product with no explanation or formatting. Example:
+                "URL 1" """
+        response = self.agentExecutor.invoke({"input":prompt})
+        return response["output"]
+    
+    def getReviews(self, product):
+        prompt = f"""
+                Get reviews for {product} from amazon using search tool and summarize it into a pros and cons list and return it
+                Output Format:
+                No preamble
+                Return string of pros and cons"""
+        response = self.agentExecutor.invoke({"input":prompt})
+        return response["output"]
+
+
+# ps = ProductSearcher()
+# print(ps.getLinks("Asus Vivobook 16"))    
 
        
 
